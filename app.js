@@ -29,40 +29,7 @@ app.use(cookieParser())
 
 
 
-app.get('/', async (req, res) => {
-    const options = {
-        method: 'GET',
-        url: 'https://amazon-scraper21.p.rapidapi.com/products/B07K2PK3BV',
-        params: {
-          api_key: 'jhrv34yrtg479g4uyfb4fyhb43yhtb74'
-        },
-        headers: {
-          'X-RapidAPI-Key': 'ba70b0675fmshbbc06c5afed7339p1329f2jsn38851fa7386b',
-          'X-RapidAPI-Host': 'amazon-scraper21.p.rapidapi.com'
-        }
-      };
-      
-      try {
-          const response = await axios.request(options);
-          res.send(response.data);
-      } catch (error) {
-          console.error(error);
-      }
-    /*  try {
-        // Fetch data from the external API
-        const response = await fetch('https://dummyjson.com/products/categories');
-        if (!response.ok) {
-            throw new Error('Failed to fetch products');
-        }
-        const json = await response.json();
-        
-        // Send the JSON data as a response
-        res.json(json);
-    } catch (error) {
-        console.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }  */
-});
+
 
 //take user input while register
 app.post('/api/register', async (req, res) => {
