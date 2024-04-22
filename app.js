@@ -34,7 +34,6 @@ app.use(cookieParser())
 //take user input while register
 app.post('/api/register', async (req, res) => {
     const { username, email, password, phoneno } = req.body;
-    console.log("recieving data -> ", username, email, password, phoneno);
 
     try {
         const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
@@ -44,6 +43,7 @@ app.post('/api/register', async (req, res) => {
             email: email,
             phonenumber: phoneno,
         });
+
         // Generate JWT token
         const jwtPayload = {
             id: createdUser._id,
@@ -52,20 +52,20 @@ app.post('/api/register', async (req, res) => {
             phonenumber: createdUser.phonenumber,
         };
 
- jwt.sign(jwtPayload, jwtSecret, {}, (err, token) => {
+        jwt.sign(jwtPayload, jwtSecret, { expiresIn: '7d' }, (err, token) => {
             if (err) throw err;
-         
 
-            res.cookie('token', token, { sameSite: 'none', secure: true }).status(201).json({
+            // Set cookie with appropriate attributes
+            res.cookie('token', token, { sameSite: 'None', secure: true }).status(201).json({
                 id: createdUser._id,
                 username: createdUser.username,
                 email: createdUser.email,
             });
         })
     } catch (err) {
-        if (err) throw err;
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
     }
-
 });
 
 
@@ -82,50 +82,51 @@ app.get('/api/profile', (req, res) => {
 });
 app.post('/api/login', async (req, res) => {
     const { loginEmail, loginPassword } = req.body;
-    console.log(loginEmail, loginPassword);
     const email = loginEmail;
-    const foundUserEmail = await User.findOne({ email });
 
-    if (!foundUserEmail) {
-        return res.status(401).json({ error: 'User not found' });
-    }
+    try {
+        // Find user by email
+        const foundUserEmail = await User.findOne({ email });
 
-    const passOk = bcrypt.compareSync(loginPassword, foundUserEmail.password);
-
-    if (!passOk) {
-        return res.status(401).json({ error: 'Invalid password' });
-    }
-
-    const jwtPayload = {
-        id: foundUserEmail._id,
-        username: foundUserEmail.username,
-        email: foundUserEmail.email,
-        phonenumber: foundUserEmail.phonenumber,
-    };
-
-   jwt.sign(jwtPayload, jwtSecret, {}, (err, token) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Internal server error' });
+        // Check if user exists
+        if (!foundUserEmail) {
+            return res.status(401).json({ error: 'User not found' });
         }
 
-        res.cookie('token', token, { httpOnly: true }).status(200).json({
+        // Verify password
+        const passOk = bcrypt.compareSync(loginPassword, foundUserEmail.password);
+        if (!passOk) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        // Generate JWT token
+        const jwtPayload = {
             id: foundUserEmail._id,
             username: foundUserEmail.username,
             email: foundUserEmail.email,
             phonenumber: foundUserEmail.phonenumber,
-        });
-    }); 
+        };
 
-   /*  res.json({
-        user: {
-            id: foundUserEmail._id,
-            username: foundUserEmail.username,
-            email: foundUserEmail.email,
-            phonenumber: foundUserEmail.phonenumber,
-        }
-    }); */
+        jwt.sign(jwtPayload, jwtSecret, {}, (err, token) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Internal server error' });
+            }
+
+            // Set the JWT token cookie with appropriate attributes
+            res.cookie('token', token, { sameSite: 'None', secure: true }).status(200).json({
+                id: foundUserEmail._id,
+                username: foundUserEmail.username,
+                email: foundUserEmail.email,
+                phonenumber: foundUserEmail.phonenumber,
+            });
+        }); 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
+
 
 
 app.post('/api/logout', (req, res) => {
