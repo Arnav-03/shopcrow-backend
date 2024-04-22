@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 import mongoose from "mongoose"
 import jwt from "jsonwebtoken"
 import { User } from './models/user.model.js'
+import Product from './models/product.model.js'
 dotenv.config();
 
 import axios from 'axios';
@@ -165,4 +166,66 @@ app.post('/api/logout', (req, res) => {
     res.cookie('token', '', { sameSite: 'none', secure: true }).json('logout');
 });
 
+app.post('/api/product', async (req, res) => {
+    try {
+        const { id, image, name, category, subcategory, tagline, quantity, price } = req.body;
+
+        // Create a new product
+        const createdProduct = await Product.create({
+            id,
+            image,
+            name,
+            category,
+            subcategory,
+            tagline,
+            quantity,
+            price
+        });
+
+        console.log("Received data ->", createdProduct);
+
+        // Send response
+        res.status(201).json(createdProduct);
+        
+    } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
+// Assuming you have a Product model defined and imported from your database configuration file
+
+app.get('/api/products/latest/:category', async (req, res) => {
+    try {
+      const categorytype = req.params.category;
+      const latestProducts = await Product.find({ category:categorytype }).sort({ createdAt: -1 }).limit(5); // Fetch top 5 latest products in the specified category
+      res.json(latestProducts);
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  app.get('/api/products/trending/:category', async (req, res) => {
+    try {
+        const categoryType = req.params.category;
+        const latestProducts = await Product.find({ category: categoryType }).sort({ createdAt: 1 }).limit(5); // Fetch top 5 latest products in the specified category, sorted in reverse order
+        res.json(latestProducts);
+      } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }      
+  });
+  app.get('/api/product/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const productDetails = await Product.find({ _id: id }); 
+        console.log(productDetails);
+        res.json(productDetails);
+      } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }      
+  });
+  
 export { app }
