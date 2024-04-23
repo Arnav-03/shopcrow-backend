@@ -68,7 +68,40 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+app.post('/api/cart', async (req, res) => {
+    const { Cart } = req.body;
 
+    try {
+        // Extract user data from JWT token
+        const token = req.cookies?.token;
+        if (!token) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const decoded = jwt.verify(token, jwtSecret);
+        const { id, username, email, phonenumber } = decoded;
+
+        // Prepare user data and cart info to be stored in cookies
+        const userDataWithCart = {
+            id,
+            username,
+            email,
+            phonenumber,
+            Cart
+        };
+
+        // Generate new JWT token with updated user data and cart info
+        jwt.sign(userDataWithCart, jwtSecret, { expiresIn: '7d' }, (err, token) => {
+            if (err) throw err;
+
+            // Set cookie with updated JWT token
+            res.cookie('token', token, { sameSite: 'None', secure: true }).status(200).json(userDataWithCart);
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 app.get('/api/profile', (req, res) => {
     const token = req.cookies?.token;
     if (token) {
