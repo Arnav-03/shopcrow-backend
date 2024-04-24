@@ -221,7 +221,6 @@ app.get('/api/products/latest/:category', async (req, res) => {
     try {
         const id = req.params.id;
         const productDetails = await Product.find({ _id: id }); 
-        console.log(productDetails);
         res.json(productDetails);
       } catch (error) {
         console.error("Error:", error);
