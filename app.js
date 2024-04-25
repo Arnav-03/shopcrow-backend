@@ -159,6 +159,73 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+app.post('/api/deleteaccount/:id', async (req, res) => {
+    const idToBeDeleted = req.params.id;
+
+    try {
+        // Find the user by ID
+        const deletedUser = await User.findByIdAndDelete(idToBeDeleted);
+
+        if (!deletedUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Log out the user by clearing the token cookie
+        res.cookie('token', '', { sameSite: 'none', secure: true }).json({ message: 'Account deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.post('/api/updateaccount/:field/:newvalue', async (req, res) => {
+    const { field, newvalue } = req.params;
+    
+    try {
+        // Extract user data from JWT token
+        const token = req.cookies?.token;
+        if (!token) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const decoded = jwt.verify(token, jwtSecret);
+        const { id } = decoded;
+
+        // Update user field in the database
+        await User.findByIdAndUpdate(id, { [field]: newvalue });
+
+        // Fetch updated user data
+        const updatedUser = await User.findById(id);
+
+        // Generate new JWT token with updated user data
+        const jwtPayload = {
+            id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            phonenumber: updatedUser.phonenumber,
+        };
+
+        jwt.sign(jwtPayload, jwtSecret, {}, (err, newToken) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Internal server error' });
+            }
+
+            // Set the JWT token cookie with appropriate attributes
+            res.cookie('token', newToken, { sameSite: 'None', secure: true }).status(200).json({
+                message: 'Field updated successfully',
+                user: {
+                    id: updatedUser._id,
+                    username: updatedUser.username,
+                    email: updatedUser.email,
+                    phonenumber: updatedUser.phonenumber,
+                }
+            });
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 
 
