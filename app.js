@@ -159,7 +159,25 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+app.post('/api/searchresults/:search',async(req,res)=>{
+     const search=req.params.search;
+    try {
+        const results = await Product.find({
+            $or: [
+                { category: { $regex: search, $options: 'i' } },
+                { subcategory: { $regex: search, $options: 'i' } } ,
+                { tagline: { $regex: search, $options: 'i' } } 
 
+            ]
+        });
+        
+        res.json(results);
+        
+   
+    } catch (error) {
+      
+    }
+})
 app.post('/api/cartcookie', async (req, res) => {
     const { Cart } = req.body;
 
