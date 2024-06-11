@@ -591,4 +591,17 @@ app.get('/api/orders/:paymentId', async (req, res) => {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  
+  app.post('/api/userorderhistory', async (req, res) => {
+    const { userId } = req.body;
+    try {
+      const orders = await Order.find({ userId:userId });
+      res.json(orders);
+      console.log(orders)
+
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching user orders', error });
+    }
+  });
 export { app }
